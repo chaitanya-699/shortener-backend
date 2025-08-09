@@ -65,3 +65,7 @@ coverage/
 
 # Others
 HELP.md
+
+
+application.properties
+*.properties

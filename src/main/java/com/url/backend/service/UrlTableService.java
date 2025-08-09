@@ -21,7 +21,7 @@ import java.util.*;
 @Service
 public class UrlTableService {
 
-    private static final String DOMAIN = "http://localhost:8080/";
+    private static final String DOMAIN = "https://masterwayne.duckdns.org/";
     private final GuestUrlRepo guestUrlRepo;
     private final AllUrlsRepo allUrlsRepo;
     private final UserUrlTableRepo userUrlTableRepo;
@@ -74,14 +74,15 @@ public class UrlTableService {
         String urlCode = UrlCodeGenerator.generateRandomCode();
         String shortUrl = DOMAIN + urlCode;
         String description = guestRequestDto.getDescription();
-
+        LocalDateTime createdAt = LocalDateTime.now();
         //first save to AllUrls table;
         AllUrls allUrls = new AllUrls();
         allUrls.setOriginalUrl(originalUrl);
         allUrls.setShortUrl(shortUrl);
         allUrls.setUrlCode(urlCode);
         allUrls.setGuest(true);
-        allUrls.setGuestId(guestId);;
+        allUrls.setGuestId(guestId);
+        allUrls.setCreatedAt(createdAt);
 
         allUrlsRepo.save(allUrls);
 
@@ -98,6 +99,7 @@ public class UrlTableService {
         guestUrlEntry.setDescription(description);
         guestUrlEntry.setCreatedAt(LocalDateTime.now());
         guestUrlEntry.setShortUrl(shortUrl);
+        guestUrlEntry.setCreatedAt(createdAt);
 
         List<GuestUrlEntry> url = new ArrayList<>();
         url.add(guestUrlEntry);
@@ -118,7 +120,7 @@ public class UrlTableService {
         guestResponseDto.setId(allUrls1.getId());
         guestResponseDto.setDescription(description);
         guestResponseDto.setMessage("short url created!");
-
+        guestResponseDto.setCreatedAt(createdAt);
         return ResponseEntity.ok(guestResponseDto);
 
     }
@@ -129,6 +131,7 @@ public class UrlTableService {
         String urlCode = UrlCodeGenerator.generateRandomCode();
         String shortUrl = DOMAIN+urlCode;
         String description = guestDto.getDescription();
+        LocalDateTime createdAt = LocalDateTime.now();
 
         //first save to all urls
         AllUrls allUrls = new AllUrls();
@@ -137,6 +140,7 @@ public class UrlTableService {
         allUrls.setOriginalUrl(originalUrl);
         allUrls.setGuestId(guestId);
         allUrls.setGuest(true);
+        allUrls.setCreatedAt(createdAt);
         allUrlsRepo.save(allUrls);
         AllUrls allUrls1 = allUrlsRepo.findByUrlCode(urlCode);
 
@@ -168,6 +172,7 @@ public class UrlTableService {
         guestResponseDto.setUrlCode(urlCode);
         guestResponseDto.setDescription(description);
         guestResponseDto.setMessage("short url created!");
+        guestResponseDto.setCreatedAt(createdAt);
         return ResponseEntity.ok(guestResponseDto);
     }
 
@@ -410,6 +415,7 @@ public class UrlTableService {
         allUrls.setUserId(userId);
         allUrls.setCreatedAt(createdAt);
         allUrls.setOriginalUrl(originalUrl);
+        allUrls.setUser(true);
         allUrlsRepo.save(allUrls);
 
         // 2. Retrieve or create UserUrlTable
@@ -518,7 +524,7 @@ public class UrlTableService {
         UserUrlTable userUrlTable = userUrlTableRepo.findByUserId(userId);
 
         if (userUrlTable == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Collections.emptyList());
+            return ResponseEntity.status(HttpStatus.ACCEPTED).body(Collections.emptyList());
         }
 
         List<UserUrlEntry> userUrls = userUrlTable.getUserUrls();
@@ -537,7 +543,8 @@ public class UrlTableService {
             urlDto.setActive(entry.isActive());
             urlDto.setBlocked(entry.isBlocked());
             urlDto.setQr(entry.getQrData());
-            urlDto.setTotalClicks(entry.getTotalClicks());
+
+            urlDto.setAnalyticsDto(urlTableUtil.getAnalytics(entry));
 
             // Set individual analytics lists
             urlDto.setBrowserTables(entry.getBrowserTables());
@@ -558,6 +565,8 @@ public class UrlTableService {
             // Additional analytics summary if needed
             AnalyticsDto analyticsDto = urlTableUtil.getAnalytics(entry);
             urlDto.setAnalyticsDto(analyticsDto);
+
+            System.out.println(urlDto.toString());
 
             urlDtoList.add(urlDto);
         }

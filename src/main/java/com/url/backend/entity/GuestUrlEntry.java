@@ -2,7 +2,6 @@ package com.url.backend.entity;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
-import lombok.CustomLog;
 import lombok.Data;
 
 import java.time.LocalDateTime;

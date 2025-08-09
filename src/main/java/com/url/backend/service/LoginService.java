@@ -70,12 +70,20 @@ public class LoginService {
             User user = userRepo.findByEmail(email);
 
             String token = jwtUtil.generateToken(email);
-            Cookie jwtCookie = new Cookie("jwt",token);
-            jwtCookie.setHttpOnly(true);
-            jwtCookie.setSecure(false);
-            jwtCookie.setPath("/");
-            jwtCookie.setMaxAge(24 * 60 * 60);
-            httpServletResponse.addCookie(jwtCookie);
+            // Cookie jwtCookie = new Cookie("jwt",token);
+            // jwtCookie.setHttpOnly(true);
+            // jwtCookie.setSecure(true);
+            // jwtCookie.setPath("/");
+            // jwtCookie.setMaxAge(24 * 60 * 60);            
+            httpServletResponse.setHeader("Set-Cookie",
+                            String.format(
+                                "jwt=%s; Max-Age=%d; Path=/; HttpOnly; Secure; SameSite=None",
+                                token,
+                                24 * 60 * 60
+                            ));
+
+
+
             UserDto userDto = new UserDto();
             userDto.setName(name);
             userDto.setEmail(email);
@@ -97,12 +105,23 @@ public class LoginService {
             user.setLogout(false);
             userRepo.save(user);
             String token = jwtUtil.generateToken(email);
-            Cookie jwtCookie = new Cookie("jwt",token);
-            jwtCookie.setHttpOnly(true);
-            jwtCookie.setSecure(false);
-            jwtCookie.setPath("/");
-            jwtCookie.setMaxAge(24 * 60 * 60);
-            httpServletResponse.addCookie(jwtCookie);
+            
+            // Cookie jwtCookie = new Cookie("jwt",token);
+            // jwtCookie.setHttpOnly(true);
+            // jwtCookie.setSecure(true);
+            // jwtCookie.setPath("/");
+            // jwtCookie.setMaxAge(24 * 60 * 60);
+            
+            
+             httpServletResponse.setHeader("Set-Cookie",
+                            String.format(
+                                "jwt=%s; Max-Age=%d; Path=/; HttpOnly; Secure; SameSite=None",
+                                token,
+                                24 * 60 * 60
+                            ));
+            
+            
+            
             UserDto userDto = new UserDto();
             userDto.setEmail(email);
             userDto.setMessage("login success");
@@ -118,6 +137,7 @@ public class LoginService {
     public String getTokenFromCookie(HttpServletRequest request, String tokenName) {
         Cookie[] cookies = request.getCookies();
         if (cookies != null) {
+            System.out.println(cookies.toString());
             for (Cookie cookie : cookies) {
                 if (tokenName.equals(cookie.getName())) {
                     return cookie.getValue();
@@ -127,8 +147,11 @@ public class LoginService {
         return null;
     }
     public ResponseEntity<UserDto> validateToken(HttpServletRequest httpServletRequest){
-            String token = getTokenFromCookie(httpServletRequest, "jwt");
+            
+        String token = getTokenFromCookie(httpServletRequest, "jwt");
+            System.out.println(token);
             if(token != null){
+                System.out.println("inside so token not null");
                 String email = jwtUtil.validateTokenAndGetEmail(token);
                 if (email == null) {
                     return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
@@ -170,6 +193,8 @@ public class LoginService {
             user.setEmail(email);
             user.setOauth(true);
             user.setOAuthName("google");
+            user.setPassword(PasswordUtil.encode(email));    
+            
             assert email != null;
             user.setUserId(UrlCodeGenerator.generateUserId(email));
             userRepo.save(user);
@@ -180,23 +205,23 @@ public class LoginService {
         userRepo.save(user);
 
         String token = jwtUtil.generateToken(email);
+        
         Cookie jwtCookie = new Cookie("jwt", token);
         jwtCookie.setHttpOnly(true);
-        jwtCookie.setSecure(false);
+        jwtCookie.setSecure(true);
         jwtCookie.setPath("/");
         jwtCookie.setMaxAge(24 * 60 * 60);
-
+        jwtCookie.setDomain("url-shortener-flax-eta.vercel.app");
+        
         response.addCookie(jwtCookie);
-
-        // ✅ Redirect to frontend
-        response.sendRedirect("http://localhost:5173");
+        response.sendRedirect("https://url-shortener-flax-eta.vercel.app/");
     }
 
     public void githubLogin(OAuth2User principal,
                                               HttpServletRequest request,
                                               HttpServletResponse response) throws IOException {
         if (principal == null) {
-            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Google login failed");
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "github login failed");
             return;
         }
 
@@ -206,7 +231,10 @@ public class LoginService {
             User user = new User();
             String name = extractNameFromMail(email);
             user.setName(name);
-            user.setEmail(email);         // Either real or pseudo// Store GitHub username
+            user.setEmail(email);    
+            user.setOauth(true);
+            user.setOAuthName("github");
+            user.setPassword(PasswordUtil.encode(email));    
             user.setUserId(UrlCodeGenerator.generateUserId(email));
             userRepo.save(user);
         }
@@ -215,17 +243,21 @@ public class LoginService {
         user.setLogout(false);
         userRepo.save(user);
         String token = jwtUtil.generateToken(email);
+        
         Cookie jwtCookie = new Cookie("jwt", token);
         jwtCookie.setHttpOnly(true);
-        jwtCookie.setSecure(false);
+        jwtCookie.setSecure(true);
         jwtCookie.setPath("/");
         jwtCookie.setMaxAge(24 * 60 * 60);
+        jwtCookie.setDomain("url-shortener-flax-eta.vercel.app");
+        
         response.addCookie(jwtCookie);
-        response.sendRedirect("http://localhost:5173");
+        response.sendRedirect("https://url-shortener-flax-eta.vercel.app/");
 
-    }
+   }
 
     public ResponseEntity<UserDto> logout(HttpServletRequest request, HttpServletResponse response){
+        
         String token = getTokenFromCookie(request, "jwt");
         String email = jwtUtil.extractEmail(token);
         User user = userRepo.findByEmail(email);
@@ -239,6 +271,7 @@ public class LoginService {
         cookie.setMaxAge(0);
         cookie.setHttpOnly(true);
         cookie.setPath("/");
+        cookie.setSecure(true);
         response.addCookie(cookie);
         return ResponseEntity.ok(new UserDto("Logged out successfully"));
     }
@@ -283,7 +316,7 @@ public class LoginService {
         String token = jwtUtil.generateToken(email);
         Cookie cookie = new Cookie("pass_change", token);
         cookie.setMaxAge(5 * 60);
-        cookie.setSecure(false);
+        cookie.setSecure(true);
         cookie.setHttpOnly(true);
         cookie.setPath("/");
 

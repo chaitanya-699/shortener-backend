@@ -2,12 +2,12 @@ package com.url.backend.entity;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
-import com.url.backend.DTO.PeakClickDayDto;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -19,6 +19,12 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
+@ToString(exclude = {
+    "countryClicks", "browserTables", "deviceTables", "ipTables",
+    "recentClicks", "clicksByDates", "topReferrers", "operatingSystems",
+    "userUrlTable"
+})
+
 public class UserUrlEntry {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

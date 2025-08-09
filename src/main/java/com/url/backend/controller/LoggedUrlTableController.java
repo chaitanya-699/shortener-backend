@@ -42,12 +42,17 @@ public class LoggedUrlTableController {
     @GetMapping("/userAll")
     public ResponseEntity<List<UrlDto>> getAllUserUrls(HttpServletRequest request, HttpServletResponse response){
         ResponseEntity<UserDto> responseEntity = loginService.validateToken(request);
+
+        
         if(responseEntity.getStatusCode().is2xxSuccessful()){
             UserDto userDto = responseEntity.getBody();
+            
             if (userDto == null) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ArrayList<>());
             }
             String userId = userDto.getUserId();
+            System.out.println(userId);
+            System.out.println(userDto.toString());
             return urlTableService.getAllUserUrls(userId);
         }
         else{
